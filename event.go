@@ -1,7 +1,7 @@
-package eda
+package EDA
 
 import (
-	"edaApp/pkg/patternTree"
+	"edaApp/patternTree"
 	"strings"
 	"sync"
 	"time"

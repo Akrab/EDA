@@ -1,7 +1,7 @@
 package main
 
 import (
-	"edaApp/pkg/patternTree"
+	"edaApp/patternTree"
 	"fmt"
 )
 

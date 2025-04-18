@@ -1,4 +1,4 @@
-package eda
+package EDA
 
 import (
 	"crypto/rand"
