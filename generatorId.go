@@ -1,4 +1,4 @@
-package EDA
+package eda
 
 import (
 	"crypto/rand"
@@ -49,11 +49,11 @@ func generateID(eventType string) string {
 	rand.Read(randomBytes)
 	randomStr := hex.EncodeToString(randomBytes)
 
-	// Формат ID: {type_code}-{timestamp}-{counter}-{random}
-	// Тип события: market.order.created
-	// Сгенерированный ID: moc-152233012-000001-c4d8
-	// Тип события: market.order.price.update
-	// Сгенерированный ID: mopu-152231789-000001-3f2e
+	// Format ID: {type_code}-{timestamp}-{counter}-{random}
+	// Event type: market.order.created
+	// Generated ID: moc-152233012-000001-c4d8
+	// Event type: market.order.price.update
+	// Generated ID: mopu-152231789-000001-3f2e
 
 	return fmt.Sprintf("%s-%s-%06d-%s", typeCode, timeCode, count%1000000, randomStr)
 }
