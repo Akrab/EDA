@@ -5,7 +5,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/Akrab/EDA-RR"
+	eda "github.com/Akrab/EDA-RR"
 )
 
 func main() {

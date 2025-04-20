@@ -55,7 +55,13 @@ func main() {
     time.Sleep(100 * time.Millisecond)
 }
 ```
+## Примеры использования
 
+Смотрите директорию [examples](./examples) для примеров:
+
+- [Базовое использование](./examples/basic/main.go)
+- [Шаблоны маршрутизации](./examples/patterns/main.go)
+- [Запрос-ответ](./examples/request-reply/main.go)
 ## Документация
 ### Основные концепции
 
