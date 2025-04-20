@@ -62,6 +62,8 @@ func main() {
 - [Базовое использование](./examples/basic/main.go)
 - [Шаблоны маршрутизации](./examples/patterns/main.go)
 - [Запрос-ответ](./examples/request-reply/main.go)
+- [Публикация в несколько топиков](./examples/publishing_multiple_topics/main.go)
+- [Параллельный запрос-ответ](./examples/parallel_multiple_requests/main.go)
 ## Документация
 ### Основные концепции
 

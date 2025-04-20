@@ -9,67 +9,87 @@ import (
 )
 
 func main() {
-	logger := log.New(os.Stdout, "[Request-Reply Example] ", log.LstdFlags)
+	logger := log.New(os.Stdout, "[Marketplace Example] ", log.LstdFlags)
 	eventBus := eda.NewEventBus(logger)
 
-	// Запускаем сервис калькулятора
-	ch, unsub := eventBus.Subscribe("calc.add", 10)
+	// Start the inventory service
+	ch, unsub := eventBus.Subscribe("inventory.check", 10)
 	defer unsub()
 
 	go func() {
 		for event := range ch {
-			logger.Printf("Получен запрос: %s", event.ID)
+			logger.Printf("Received inventory check request: %s", event.ID)
 
-			// Извлекаем параметры
+			// Extract parameters
 			data, ok := event.Data.(map[string]interface{})
 			if !ok {
-				eventBus.DeliverResponse(event, nil, eda.NewError("Invalid data format"))
+				eventBus.DeliverResponse(event, nil, eda.NewError("Invalid request format"))
 				continue
 			}
 
-			a, aOk := data["a"].(float64)
-			b, bOk := data["b"].(float64)
-
-			if !aOk || !bOk {
-				eventBus.DeliverResponse(event, nil, eda.NewError("Invalid parameters"))
+			productID, ok := data["product_id"].(string)
+			if !ok {
+				eventBus.DeliverResponse(event, nil, eda.NewError("Missing product ID"))
 				continue
 			}
 
-			// Вычисляем результат
-			result := a + b
-			logger.Printf("Результат: %.2f + %.2f = %.2f", a, b, result)
+			quantity, ok := data["quantity"].(float64)
+			if !ok {
+				eventBus.DeliverResponse(event, nil, eda.NewError("Invalid quantity format"))
+				continue
+			}
 
-			// Отправляем ответ
+			// Simulate database check
+			available := true
+			var stock float64 = 100 // Simulated inventory level
+
+			if quantity > stock {
+				available = false
+			}
+
+			// Send response
+			logger.Printf("Product %s availability check: %v (requested: %.0f, in stock: %.0f)",
+				productID, available, quantity, stock)
+
 			eventBus.DeliverResponse(event, map[string]interface{}{
-				"result": result,
+				"product_id": productID,
+				"available":  available,
+				"stock":      stock,
 			}, nil)
 		}
 	}()
 
-	// Отправляем запрос
-	logger.Println("Отправка запроса...")
+	// Send inventory check request
+	logger.Println("Sending inventory check request...")
 	ctx := context.Background()
 	response, err := eventBus.RequestReply(
 		ctx,
-		"calc.add",
-		map[string]interface{}{"a": 5.0, "b": 3.0},
+		"inventory.check",
+		map[string]interface{}{
+			"product_id": "PROD-12345",
+			"quantity":   5.0,
+		},
 		100*time.Millisecond,
 	)
 
 	if err != nil {
-		logger.Fatalf("Ошибка запроса: %v", err)
+		logger.Fatalf("Request error: %v", err)
 	}
 
-	// Обрабатываем ответ
+	// Process the response
 	respMap, ok := response.(map[string]interface{})
 	if !ok {
-		logger.Fatalf("Некорректный формат ответа")
+		logger.Fatalf("Invalid response format")
 	}
 
-	result, ok := respMap["result"].(float64)
+	available, ok := respMap["available"].(bool)
 	if !ok {
-		logger.Fatalf("Результат не найден")
+		logger.Fatalf("Invalid availability data")
 	}
 
-	logger.Printf("Получен ответ: %.2f", result)
+	if available {
+		logger.Printf("Product is available! Stock: %.0f", respMap["stock"].(float64))
+	} else {
+		logger.Printf("Product is not available in requested quantity")
+	}
 }

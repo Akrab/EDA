@@ -61,6 +61,8 @@ See the [examples](./examples) directory for samples:
 - [Basic Usage](./examples/basic/main.go)
 - [Pattern Routing](./examples/patterns/main.go)
 - [Request-Response](./examples/request-reply/main.go)
+- [Publishing multiple](./examples/publishing_multiple_topics/main.go)
+- [Parallel requests](./examples/parallel_multiple_requests/main.go)
 ## Documentation
 ### Core Concepts
 
