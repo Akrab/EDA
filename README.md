@@ -2,76 +2,75 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
+EDA-RR is a simple event library for Go, extracted from a personal project. It provides basic functionality for organizing communication between application components through events.
 
-EDA-RR - это простая библиотека для работы с событиями в Go, выделенная из личного проекта. Она предоставляет базовую функциональность для организации взаимодействия между компонентами приложения через события.
+## Features
 
-## Возможности
+- **Publish-Subscribe**: Asynchronous event publishing and subscription
+- **Routing Patterns**: Support for single (`*`) and multiple (`**`) wildcards
+- **Event Filtering**: Subscribe to events with content-based filtering
+- **Request-Response**: Synchronous communication between components
+- **Multiple Publishing**: Publishing events to multiple topics
+- **Multiple Requests**: Parallel request dispatching to multiple recipients
 
-- **Publish-Subscribe**: Асинхронная публикация и подписка на события
-- **Шаблоны маршрутизации**: Поддержка одиночных (`*`) и множественных (`**`) wildcard-ов
-- **Фильтрация событий**: Подписка на события с фильтрацией по содержимому
-- **Request-Response**: Синхронное взаимодействие между компонентами
-- **Множественная публикация**: Публикация события в несколько топиков
-- **Множественные запросы**: Параллельная отправка запросов нескольким получателям
-
-## Установка
+## Installation
 
 ```bash
 go get github.com/Akrab/EDA-RR
 ```
-## Быстрый старт
+## Quick Start
 
 ```go
 package main
 
 import (
-    "log"
-    "os"
-    "time"
-    
-    "github.com/Akrab/EDA-RR"
+  "log"
+  "os"
+  "time"
+
+  "github.com/Akrab/EDA-RR"
 )
 
 func main() {
-    // Создаем шину событий
-    eventBus := eda.NewEventBus(log.New(os.Stdout, "[EDA] ", log.LstdFlags))
-    
-    // Подписываемся на события
-    ch, unsubscribe := eventBus.Subscribe("user.login", 10)
-    defer unsubscribe()
-    
-    // Обрабатываем события
-    go func() {
-        for event := range ch {
-            log.Printf("Получено событие: %v", event)
-        }
-    }()
-    
-    // Публикуем событие
-    eventBus.Publish("user.login", map[string]string{
-        "username": "john_doe",
-    })
-    
-    time.Sleep(100 * time.Millisecond)
+  // Create an event bus
+  eventBus := eda.NewEventBus(log.New(os.Stdout, "[EDA] ", log.LstdFlags))
+
+  // Subscribe to events
+  ch, unsubscribe := eventBus.Subscribe("user.login", 10)
+  defer unsubscribe()
+
+  // Process events
+  go func() {
+    for event := range ch {
+      log.Printf("Received event: %v", event)
+    }
+  }()
+
+  // Publish an event
+  eventBus.Publish("user.login", map[string]string{
+    "username": "john_doe",
+  })
+
+  time.Sleep(100 * time.Millisecond)
 }
 ```
-## Примеры использования
+## Usage Examples
 
-Смотрите директорию [examples](./examples) для примеров:
+See the [examples](./examples) directory for samples:
 
-- [Базовое использование](./examples/basic/main.go)
-- [Шаблоны маршрутизации](./examples/patterns/main.go)
-- [Запрос-ответ](./examples/request-reply/main.go)
-## Документация
-### Основные концепции
+- [Basic Usage](./examples/basic/main.go)
+- [Pattern Routing](./examples/patterns/main.go)
+- [Request-Response](./examples/request-reply/main.go)
+## Documentation
+### Core Concepts
 
-- **Событие (Event)**: Содержит идентификатор, тип, данные и метаданные
+- **Event**: Contains identifier, type, data, and metadata
 
-- **Подписка (Subscription)**: Связывает шаблон события с каналом обработки
+- **Subscription**:  Links an event pattern to a processing channel
 
-- **Шаблон (Pattern)**: Определяет правила маршрутизации событий
-    - `user.login` - точное совпадение
-    - `user.*` - любое событие с префиксом "user." и одним сегментом
-    - `user.**` - любое событие с префиксом "user." и любым количеством сегментов
+- **Pattern**:  Defines event routing rules
+    - `user.login` - exact match
+    - `user.*` - any event with "user." prefix and one segment
+    - `user.**` -  any event with "user." prefix and any number of segments
 
-#### MIT. Без гарантий и ответственности.
+#### MIT. No warranties or liabilities.
