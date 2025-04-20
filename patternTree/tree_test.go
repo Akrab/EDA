@@ -4,37 +4,37 @@ import (
 	"testing"
 )
 
-// TestPatternMatching проверяет основную функциональность сопоставления шаблонов
+// TestPatternMatching tests the basic functionality of pattern matching
 func TestPatternMatching(t *testing.T) {
 	tree := NewPatternTree()
 
-	// Добавляем шаблоны
+	// Add patterns
 	tree.AddPattern("market.*.data")
 	tree.AddPattern("market.*.data.**")
 	tree.AddPattern("user.login.success")
 	tree.AddPattern("user.*.error")
 
-	// Тестовые случаи
+	// Test cases
 	tests := []struct {
 		eventType string
 		pattern   string
 		expected  bool
 	}{
-		// Одиночные шаблоны
+		// Single wildcard patterns
 		{"market.BTC.data", "market.*.data", true},
 		{"market.ETH.data", "market.*.data", true},
 		{"market.BTC.price", "market.*.data", false},
 
-		// Множественные шаблоны
+		// Multiple wildcard patterns
 		{"market.BTC.data.volume", "market.*.data.**", true},
 		{"market.BTC.data.price.max", "market.*.data.**", true},
 		{"market.BTC.trade.volume", "market.*.data.**", false},
 
-		// Точное совпадение
+		// Exact match
 		{"user.login.success", "user.login.success", true},
 		{"user.login.failure", "user.login.success", false},
 
-		// Смешанные шаблоны
+		// Mixed patterns
 		{"user.register.error", "user.*.error", true},
 		{"user.login.error", "user.*.error", true},
 		{"user.error", "user.*.error", false},
@@ -49,23 +49,23 @@ func TestPatternMatching(t *testing.T) {
 	}
 }
 
-// TestEdgeCases проверяет граничные случаи и потенциальные проблемы
+// TestEdgeCases tests edge cases and potential issues
 func TestEdgeCases(t *testing.T) {
 	tree := NewPatternTree()
 
-	// Проверка пустых и некорректных шаблонов
+	// Test empty and invalid patterns
 	tree.AddPattern("")
 	if tree.MatchesPattern("", "some.event") {
 		t.Error("Empty pattern should not match any event")
 	}
 
-	// Проверка шаблона со всеми символами **
+	// Test pattern with all ** symbols
 	tree.AddPattern("**.**.**")
 	if !tree.MatchesPattern("**.**.**", "a.b.c") {
 		t.Error("Pattern with all ** should match any event")
 	}
 
-	// Проверка синтаксиса шаблонов
+	// Test pattern syntax
 	complexPattern := "a.*.b.**.c.*.d"
 	tree.AddPattern(complexPattern)
 
@@ -75,8 +75,8 @@ func TestEdgeCases(t *testing.T) {
 	}
 
 	invalidMatches := []string{
-		"a.x.c.y.d",         // отсутствует b
-		"a.x.b.something.d", // отсутствует c
+		"a.x.c.y.d",         // missing b
+		"a.x.b.something.d", // missing c
 	}
 
 	for _, eventType := range validMatches {

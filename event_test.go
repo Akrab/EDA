@@ -9,23 +9,21 @@ import (
 	"time"
 )
 
-// TestBasicPublishSubscribe проверяет базовый функционал публикации и подписки
+// TestBasicPublishSubscribe tests the basic publish-subscribe functionality
 func TestBasicPublishSubscribe(t *testing.T) {
 	logger := log.New(os.Stdout, "[TEST] ", log.LstdFlags)
 	eb := NewEventBus(logger)
 
-	// Создаем подписку
 	ch, unsub := eb.Subscribe("test.event", 10)
 	defer unsub()
 
-	// Публикуем событие
 	expectedData := map[string]string{"message": "hello world"}
 	eb.Publish("test.event", expectedData)
 
-	// Ждем получения события
+	// Wait for event reception
 	select {
 	case event := <-ch:
-		// Проверяем содержимое события
+		// Check event content
 		if event.Type != "test.event" {
 			t.Errorf("Expected event type 'test.event', got '%s'", event.Type)
 		}
@@ -44,12 +42,12 @@ func TestBasicPublishSubscribe(t *testing.T) {
 	}
 }
 
-// TestEventPatterns проверяет маршрутизацию событий по шаблонам
+// TestEventPatterns tests event routing by patterns
 func TestEventPatterns(t *testing.T) {
 	logger := log.New(os.Stdout, "[TEST] ", log.LstdFlags)
 	eb := NewEventBus(logger)
 
-	// Структура для подсчета полученных сообщений
+	// Structure for counting received messages
 	counts := struct {
 		wildcard   int
 		doubleWild int
@@ -58,7 +56,7 @@ func TestEventPatterns(t *testing.T) {
 		mu         sync.Mutex
 	}{}
 
-	// Подписки с разными шаблонами
+	// Subscriptions with different patterns
 	wildcardCh, unsub1 := eb.Subscribe("market.*.data", 10)
 	doubleWildCh, unsub2 := eb.Subscribe("market.**", 10)
 	exactCh, unsub3 := eb.Subscribe("market.BTC.price", 10)
@@ -69,11 +67,11 @@ func TestEventPatterns(t *testing.T) {
 	defer unsub3()
 	defer unsub4()
 
-	// Горутины для подсчета событий
+	// Goroutines for counting events
 	var wg sync.WaitGroup
 	wg.Add(4)
 
-	// Обработчик для одиночного шаблона
+	// Handler for single wildcard pattern
 	go func() {
 		defer wg.Done()
 		for range wildcardCh {
@@ -83,7 +81,7 @@ func TestEventPatterns(t *testing.T) {
 		}
 	}()
 
-	// Обработчик для двойного шаблона
+	// Handler for double wildcard pattern
 	go func() {
 		defer wg.Done()
 		for range doubleWildCh {
@@ -93,7 +91,7 @@ func TestEventPatterns(t *testing.T) {
 		}
 	}()
 
-	// Обработчик для точного совпадения
+	// Handler for exact match
 	go func() {
 		defer wg.Done()
 		for range exactCh {
@@ -103,7 +101,7 @@ func TestEventPatterns(t *testing.T) {
 		}
 	}()
 
-	// Обработчик для события без совпадения
+	// Handler for non-matching event
 	go func() {
 		defer wg.Done()
 		for range noMatchCh {
@@ -113,17 +111,17 @@ func TestEventPatterns(t *testing.T) {
 		}
 	}()
 
-	// Публикуем события
+	// Publish events
 	eb.Publish("market.BTC.data", "BTC data")
 	eb.Publish("market.ETH.data", "ETH data")
 	eb.Publish("market.BTC.price", "BTC price")
 	eb.Publish("market.BTC.trade", "BTC trade")
 	eb.Publish("user.login", "User login")
 
-	// Ждем небольшую задержку, чтобы обработчики успели отработать
+	// Wait for handlers to process events
 	time.Sleep(200 * time.Millisecond)
 
-	// Проверяем результаты
+	// Check results
 	counts.mu.Lock()
 	defer counts.mu.Unlock()
 
@@ -148,7 +146,7 @@ func TestFilteredSubscription(t *testing.T) {
 	logger := log.New(os.Stdout, "[TEST] ", log.LstdFlags)
 	eb := NewEventBus(logger)
 
-	// Создаем фильтр для событий с data.value > 100
+	// Create filter for events with data.value > 100
 	filter := func(event Event) bool {
 		data, ok := event.Data.(map[string]interface{})
 		if !ok {
@@ -163,10 +161,10 @@ func TestFilteredSubscription(t *testing.T) {
 		return value > 100.0
 	}
 
-	// Подписываемся с фильтром
+	// Subscribe with filter
 	ch, unsub := eb.SubscribeWithFilter("test.value", 10, filter)
 
-	// Счетчик полученных событий
+	// Counter for received events
 	var receivedCount int
 	var mu sync.Mutex
 	var wg sync.WaitGroup
@@ -181,22 +179,21 @@ func TestFilteredSubscription(t *testing.T) {
 		}
 	}()
 
-	// Публикуем события с разными значениями
+	// Publish events with different values
 	eb.Publish("test.value", map[string]interface{}{"value": 50.0})
 	eb.Publish("test.value", map[string]interface{}{"value": 150.0})
 	eb.Publish("test.value", map[string]interface{}{"value": 75.0})
 	eb.Publish("test.value", map[string]interface{}{"value": 200.0})
 
-	// Ждем небольшую задержку для обработки
+	// Wait for processing
 	time.Sleep(100 * time.Millisecond)
 
-	// Отписываемся, чтобы закрыть горутину
 	unsub()
 
-	// Ждем завершения горутины
+	// Wait for goroutine completion
 	wg.Wait()
 
-	// Проверяем результат - должны быть получены только 2 события с value > 100
+	// Check result - should receive only 2 events with value > 100
 	mu.Lock()
 	count := receivedCount
 	mu.Unlock()
@@ -205,18 +202,18 @@ func TestFilteredSubscription(t *testing.T) {
 	}
 }
 
-// TestRequestReply проверяет синхронный запрос-ответ
+// TestRequestReply tests synchronous request-response
 func TestRequestReply(t *testing.T) {
 	logger := log.New(os.Stdout, "[TEST] ", log.LstdFlags)
 	eb := NewEventBus(logger)
 
-	// Запускаем обработчик запросов
+	// Start request handler
 	ch, unsub := eb.Subscribe("calc.add", 10)
 	defer unsub()
 
 	go func() {
 		for event := range ch {
-			// Извлекаем данные запроса
+			// Extract request data
 			data, ok := event.Data.(map[string]interface{})
 			if !ok {
 				continue
@@ -226,20 +223,20 @@ func TestRequestReply(t *testing.T) {
 			b, bOk := data["b"].(float64)
 
 			if !aOk || !bOk {
-				// Отправляем ошибку
+				// Send error
 				eb.DeliverResponse(event, nil, NewError("Invalid parameters"))
 				continue
 			}
 
-			// Вычисляем результат
+			// Calculate result
 			result := a + b
 
-			// Отправляем ответ
+			// Send response
 			eb.DeliverResponse(event, map[string]interface{}{"result": result}, nil)
 		}
 	}()
 
-	// Отправляем запрос
+	// Send request
 	ctx := context.Background()
 	response, err := eb.RequestReply(
 		ctx,
@@ -248,7 +245,7 @@ func TestRequestReply(t *testing.T) {
 		100*time.Millisecond,
 	)
 
-	// Проверяем результат
+	// Check result
 	if err != nil {
 		t.Fatalf("Expected no error, got: %v", err)
 	}
@@ -267,7 +264,7 @@ func TestRequestReply(t *testing.T) {
 		t.Errorf("Expected result 8.0, got %f", result)
 	}
 
-	// Проверяем таймаут
+	// Test timeout
 	_, err = eb.RequestReply(
 		ctx,
 		"calc.nonexistent",
@@ -280,37 +277,37 @@ func TestRequestReply(t *testing.T) {
 	}
 }
 
-// TestRequestMultiple проверяет множественные запросы
+// TestRequestMultiple tests multiple requests
 func TestRequestMultiple(t *testing.T) {
 	logger := log.New(os.Stdout, "[TEST] ", log.LstdFlags)
 	eb := NewEventBus(logger)
 
-	// Запускаем обработчики разных сервисов
+	// Start handlers for different services
 	service1Ch, unsub1 := eb.Subscribe("service1.data", 10)
 	service2Ch, unsub2 := eb.Subscribe("service2.data", 10)
 
 	defer unsub1()
 	defer unsub2()
 
-	// Обработчик для сервиса 1
+	// Handler for service 1
 	go func() {
 		for event := range service1Ch {
-			// Отвечаем с задержкой
+			// Reply with delay
 			time.Sleep(10 * time.Millisecond)
 			eb.DeliverResponse(event, "service1 response", nil)
 		}
 	}()
 
-	// Обработчик для сервиса 2
+	// Handler for service 2
 	go func() {
 		for event := range service2Ch {
-			// Отвечаем с задержкой
+			// Reply with delay
 			time.Sleep(20 * time.Millisecond)
 			eb.DeliverResponse(event, "service2 response", nil)
 		}
 	}()
 
-	// Запрос к нескольким сервисам
+	// Request to multiple services
 	ctx := context.Background()
 	results, errors := eb.RequestMultiple(
 		ctx,
@@ -319,7 +316,7 @@ func TestRequestMultiple(t *testing.T) {
 		100*time.Millisecond,
 	)
 
-	// Проверяем результаты
+	// Check results
 	if len(errors) > 0 {
 		t.Fatalf("Expected no errors, got: %v", errors)
 	}
@@ -340,26 +337,25 @@ func TestRequestMultiple(t *testing.T) {
 	}
 }
 
-// TestPublishMultiple проверяет множественную публикацию
+// TestPublishMultiple tests multiple publishing
 func TestPublishMultiple(t *testing.T) {
 	logger := log.New(os.Stdout, "[TEST] ", log.LstdFlags)
 	eb := NewEventBus(logger)
 
-	// Счетчик событий
 	var counts struct {
 		subscriber1 int
 		subscriber2 int
 		mu          sync.Mutex
 	}
 
-	// Создаем двух подписчиков с перекрывающимися шаблонами
+	// Create two subscribers with overlapping patterns
 	ch1, unsub1 := eb.Subscribe("market.**", 10)
 	ch2, unsub2 := eb.Subscribe("*.BTC.*", 10)
 
 	defer unsub1()
 	defer unsub2()
 
-	// Горутины для подсчета событий
+	// Goroutines for counting events
 	var wg sync.WaitGroup
 	wg.Add(2)
 
@@ -381,46 +377,42 @@ func TestPublishMultiple(t *testing.T) {
 		}
 	}()
 
-	// Публикуем несколько связанных событий
 	eventTypes := []string{
 		"market.BTC.price",
 		"market.BTC.volume",
 		"market.ETH.price",
 	}
 
-	// Используем PublishMultiple
 	eb.PublishMultiple(eventTypes, "test data")
 
-	// Ждем небольшую задержку для обработки
+	// Wait for processing
 	time.Sleep(100 * time.Millisecond)
 
-	// Проверяем результаты
+	// Check results
 	counts.mu.Lock()
 	defer counts.mu.Unlock()
 
-	// Подписчик 1 должен получить все 3 события (market.**)
+	// Subscriber 1 should receive all 3 events (market.**)
 	if counts.subscriber1 != 3 {
 		t.Errorf("Subscriber1 should receive 3 events, got %d", counts.subscriber1)
 	}
 
-	// Подписчик 2 должен получить 2 события (*.BTC.*)
+	// Subscriber 2 should receive 2 events (*.BTC.*)
 	if counts.subscriber2 != 2 {
 		t.Errorf("Subscriber2 should receive 2 events, got %d", counts.subscriber2)
 	}
 }
 
-// TestUnsubscribe проверяет функционал отписки
+// TestUnsubscribe tests unsubscribe functionality
 func TestUnsubscribe(t *testing.T) {
 	logger := log.New(os.Stdout, "[TEST] ", log.LstdFlags)
 	eb := NewEventBus(logger)
 
-	// Создаем подписку
 	ch, unsub := eb.Subscribe("test.event", 10)
 
-	// Публикуем событие
 	eb.Publish("test.event", "before unsubscribe")
 
-	// Проверяем, что событие получено
+	// Check that event is received
 	select {
 	case event := <-ch:
 		if event.Data != "before unsubscribe" {
@@ -430,13 +422,11 @@ func TestUnsubscribe(t *testing.T) {
 		t.Fatal("Timeout waiting for event before unsubscribe")
 	}
 
-	// Отписываемся
 	unsub()
 
-	// Публикуем еще одно событие
 	eb.Publish("test.event", "after unsubscribe")
 
-	// Проверяем, что событие НЕ получено (канал должен быть закрыт)
+	// Check that event is NOT received (channel should be closed)
 	select {
 	case event, ok := <-ch:
 		if ok {

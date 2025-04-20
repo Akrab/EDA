@@ -15,7 +15,7 @@ var (
 	counterMutex  sync.RWMutex
 )
 
-func generateID(eventType string) string {
+func GenerateID(eventType string) string {
 
 	counterMutex.Lock()
 	counter, exists := eventCounters[eventType]

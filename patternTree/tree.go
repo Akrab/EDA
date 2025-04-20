@@ -5,7 +5,6 @@ import (
 	"sync"
 )
 
-// PatternTree represents a pattern tree
 type PatternTree struct {
 	root     *PatternNode
 	mutex    sync.RWMutex    // For thread safety
@@ -13,7 +12,6 @@ type PatternTree struct {
 	patterns map[string]bool // Set of added patterns
 }
 
-// NewPatternTree creates a new pattern tree
 func NewPatternTree() *PatternTree {
 	return &PatternTree{
 		root: &PatternNode{
@@ -168,9 +166,6 @@ func (tree *PatternTree) Matches(eventType string) bool {
 
 // Pattern matching function from the question
 func (tree *PatternTree) patternMatches(pattern, eventType string) bool {
-	//if pattern == eventType {
-	//	return false
-	//}
 
 	if !strings.Contains(pattern, "*") {
 		return false
